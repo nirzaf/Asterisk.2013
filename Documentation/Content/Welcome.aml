@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<topic id="79b6241e-05a3-441c-b6a1-51f2b5b7f265" revisionNumber="1">
+	<developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+		<introduction>
+			<para>AsterNET is an open source framework for Asterisk AMI and FastAGI. AsterNET allows you to talk to Asterisk AMI from any .NET application and create FastAGI applications in any .NET language.</para>
+		</introduction>
+
+		<section>
+			<title>History</title>
+			<content>
+				<para>AsterNET is a fork of Asterisk.NET. Now we've reached release status and AsterNET version 1.0.0 we feel this is a good separation point from the original project.</para>
+
+				<para>
+					<localUri>
+						Special Thanks
+						<externalLink>
+							<linkText>http://www.zapappi.com</linkText>
+							<linkUri>http://www.zapappi.com</linkUri>
+							<linkTarget>_blank</linkTarget>
+						</externalLink>
+ 						and 
+						<externalLink>
+							<linkText>http://www.jetbrains.com/resharper/</linkText>
+							<linkUri>http://www.jetbrains.com/resharper/</linkUri>
+							<linkTarget>_blank</linkTarget>
+						</externalLink>
+					</localUri>
+				</para>
+			</content>
+		</section>
+
+		<relatedTopics>
+			<link xlink:href="100303f2-3dd8-401b-a594-579aae2a939c" />
+		</relatedTopics>
+	</developerConceptualDocument>
+</topic>

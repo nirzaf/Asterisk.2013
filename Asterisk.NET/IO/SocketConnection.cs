@@ -1,0 +1,234 @@
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace AsterNET.IO
+{
+    /// <summary>
+    /// Socket connection to asterisk.
+    /// </summary>
+    public class SocketConnection
+    {
+        private TcpClient tcpClient;
+        private NetworkStream networkStream;
+        private StreamReader reader;
+        private BinaryWriter writer;
+        private Encoding encoding;
+        private bool initial;
+
+        #region Constructor - SocketConnection(string host, int port, int receiveTimeout)
+
+        /// <summary>
+        /// Consructor
+        /// </summary>
+        /// <param name="host">client host</param>
+        /// <param name="port">client port</param>
+        /// <param name="encoding">encoding</param>
+        public SocketConnection(string host, int port, Encoding encoding)
+            : this(new TcpClient(host, port), encoding)
+        {
+        }
+
+        /// <summary>
+        /// Consructor
+        /// </summary>
+        /// <param name="host">client host</param>
+        /// <param name="port">client port</param>
+        /// <param name="encoding">encoding</param>
+        /// <param name="receiveBufferSize">size of the receive buffer.</param>
+        public SocketConnection(string host, int port, int receiveBufferSize, Encoding encoding)
+            : this(new TcpClient(host, port) { ReceiveBufferSize = receiveBufferSize }, encoding)
+        {
+        }
+
+        #endregion Constructor - SocketConnection(string host, int port, int receiveTimeout)
+
+        #region Constructor - SocketConnection(socket)
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="tcpClient">TCP client from Listener</param>
+        /// <param name="encoding">encoding</param>
+        internal SocketConnection(TcpClient tcpClient, Encoding encoding)
+        {
+            initial = true;
+            this.encoding = encoding;
+            this.tcpClient = tcpClient;
+            this.networkStream = this.tcpClient.GetStream();
+            this.reader = new StreamReader(this.networkStream, encoding);
+            this.writer = new BinaryWriter(this.networkStream, encoding);
+        }
+
+        #endregion Constructor - SocketConnection(socket)
+
+        public TcpClient TcpClient
+        {
+            get { return tcpClient; }
+        }
+
+        public NetworkStream NetworkStream
+        {
+            get { return networkStream; }
+        }
+
+        public Encoding Encoding
+        {
+            get { return encoding; }
+        }
+
+        public bool Initial
+        {
+            get { return initial; }
+            set { initial = value; }
+        }
+
+        #region IsConnected
+
+        /// <summary>
+        /// Returns the connection state of the socket.
+        /// </summary>
+        public bool IsConnected
+        {
+            get { return tcpClient.Connected; }
+        }
+
+        #endregion IsConnected
+
+        #region LocalAddress
+
+        public IPAddress LocalAddress
+        {
+            get
+            {
+                return ((IPEndPoint)(tcpClient.Client.LocalEndPoint)).Address;
+            }
+        }
+
+        #endregion LocalAddress
+
+        #region LocalPort
+
+        public int LocalPort
+        {
+            get
+            {
+                return ((IPEndPoint)(tcpClient.Client.LocalEndPoint)).Port;
+            }
+        }
+
+        #endregion LocalPort
+
+        #region RemoteAddress
+
+        public IPAddress RemoteAddress
+        {
+            get
+            {
+                return ((IPEndPoint)(tcpClient.Client.RemoteEndPoint)).Address;
+            }
+        }
+
+        #endregion RemoteAddress
+
+        #region RemotePort
+
+        public int RemotePort
+        {
+            get
+            {
+                return ((IPEndPoint)(tcpClient.Client.LocalEndPoint)).Port;
+            }
+        }
+
+        #endregion RemotePort
+
+        #region ReadLine()
+
+        /// <summary>
+        /// Reads a line of text from the socket connection. The current thread is
+        /// blocked until either the next line is received or an IOException
+        /// encounters.
+        /// </summary>
+        /// <returns>the line of text received excluding any newline character</returns>
+        /// <throws>  IOException if the connection has been closed. </throws>
+        public string ReadLine()
+        {
+            string line = null;
+            try
+            {
+                line = reader.ReadLine();
+            }
+            catch
+            {
+                line = null;
+            }
+            return line;
+        }
+
+        #endregion ReadLine()
+
+        #region Write(string s)
+
+        /// <summary>
+        /// Sends a given String to the socket connection.
+        /// </summary>
+        /// <param name="s">the String to send.</param>
+        /// <throws> IOException if the String cannot be sent, maybe because the </throws>
+        /// <summary>connection has already been closed.</summary>
+        public void Write(string s)
+        {
+            writer.Write(encoding.GetBytes(s));
+            writer.Flush();
+        }
+
+        #endregion Write(string s)
+
+        #region Write(string msg)
+
+        /// <summary>
+        /// Sends a given String to the socket connection.
+        /// </summary>
+        /// <param name="msg">the String to send.</param>
+        /// <throws> IOException if the String cannot be sent, maybe because the </throws>
+        /// <summary>connection has already been closed.</summary>
+        public void WriteEx(string msg)
+        {
+            byte[] data = encoding.GetBytes(msg);
+            networkStream.BeginWrite(data, 0, data.Length, onWriteFinished, networkStream);
+            networkStream.Flush();
+        }
+
+        private void onWriteFinished(IAsyncResult ar)
+        {
+            NetworkStream stream = (NetworkStream)ar.AsyncState;
+            stream.EndWrite(ar);
+        }
+
+        #endregion Write(string msg)
+
+        #region Close
+
+        /// <summary>
+        /// Closes the socket connection including its input and output stream and
+        /// frees all associated ressources.<br/>
+        /// When calling close() any Thread currently blocked by a call to readLine()
+        /// will be unblocked and receive an IOException.
+        /// </summary>
+        /// <throws>  IOException if the socket connection cannot be closed. </throws>
+        public void Close()
+        {
+            try
+            {
+                tcpClient.Client.Shutdown(SocketShutdown.Both);
+                tcpClient.Client.Close();
+                tcpClient.Close();
+            }
+            catch { }
+        }
+
+        #endregion Close
+    }
+}
