@@ -20,21 +20,6 @@
         }
 
         /// <summary>
-        ///     Creates a new ParkAction.<br />
-        /// </summary>
-        /// <param name="channel">Set the Channel which should be parked</param>
-        /// <param name="channel2">Set the Channel where the Call will end up after the timeout is reached.</param>
-        /// <param name="timeout">Timeout in msec, after timeout is reached call will come back to channel2</param>
-        /// <param name="parkinglot">Set the Parking lot.</param>
-        public ParkAction(string channel, string channel2, string timeout, string parkinglot)
-        {
-            Channel = channel;
-            TimeoutChannel = channel2;
-            Timeout = timeout;
-            Parkinglot = parkinglot;
-        }
-
-        /// <summary>
         ///     Creates a new ParkAction with announce channel .<br />
         /// </summary>
         /// <param name="callerChannel">Set the Channel which should be parked</param>
