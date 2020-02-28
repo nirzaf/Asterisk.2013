@@ -28,11 +28,9 @@ namespace AsterNET.Manager
         private int port;
         private string username;
         private string password;
-
         private SocketConnection mrSocket;
         private Thread mrReaderThread;
         private ManagerReader mrReader;
-
         private int defaultResponseTimeout = 2000;
         private int defaultEventTimeout = 5000;
         private int sleepTime = 50;
@@ -44,18 +42,15 @@ namespace AsterNET.Manager
         private Dictionary<int, IResponseHandler> pingHandlers;
         private Dictionary<int, IResponseHandler> responseEventHandlers;
         private int pingInterval = 10000;
-
         private object lockSocket = new object();
         private object lockSocketWrite = new object();
         private object lockHandlers = new object();
-
         private bool enableEvents = true;
         private string version = string.Empty;
         private Encoding socketEncoding = Encoding.ASCII;
         private bool reconnected = false;
         private bool reconnectEnable = false;
         private int reconnectCount;
-
         private Dictionary<int, ConstructorInfo> registeredEventClasses;
         private Dictionary<int, Func<ManagerEvent, bool>> registeredEventHandlers;
         private event EventHandler<ManagerEvent> internalEvent;
@@ -73,11 +68,11 @@ namespace AsterNET.Manager
 
         public char[] VAR_DELIMITER = { '|' };
 
-        #endregion
+        #endregion Variables
 
         /// <summary>
         /// Allows you to specifiy how events are fired. If false (default) then
-        /// events will be fired in order. Otherwise events will be fired as they arrive and 
+        /// events will be fired in order. Otherwise events will be fired as they arrive and
         /// control logic in your application will need to handle synchronization.
         /// </summary>
         public bool UseASyncEvents = false;
@@ -139,7 +134,7 @@ namespace AsterNET.Manager
         /// </summary>
         public event EventHandler<AlarmClearEvent> AlarmClear;
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public event EventHandler<BridgeEvent> Bridge;
         /// <summary>
@@ -339,7 +334,7 @@ namespace AsterNET.Manager
         /// </summary>
         public event EventHandler<StatusEvent> Status;
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public event EventHandler<TransferEvent> Transfer;
         /// <summary>
@@ -422,7 +417,7 @@ namespace AsterNET.Manager
         public event EventHandler<ConfbridgeUnmuteEvent> ConfbridgeUnmute;
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public event EventHandler<FailedACLEvent> FailedACL;
 
@@ -508,26 +503,24 @@ namespace AsterNET.Manager
         /// </summary>
         public event EventHandler<QueueSummaryEvent> QueueSummary;
 
-        #endregion
+        #endregion Events
 
         #region Constructor - ManagerConnection()
+
         /// <summary> Creates a new instance.</summary>
         public ManagerConnection()
         {
             callerThread = Thread.CurrentThread;
-
             socketEncoding = Encoding.ASCII;
-
             responseHandlers = new Dictionary<int, IResponseHandler>();
             pingHandlers = new Dictionary<int, IResponseHandler>();
             responseEventHandlers = new Dictionary<int, IResponseHandler>();
             registeredEventClasses = new Dictionary<int, ConstructorInfo>();
-
             Helper.RegisterBuiltinEventClasses(registeredEventClasses);
-
             registeredEventHandlers = new Dictionary<int, Func<ManagerEvent, bool>>();
 
             #region Event mapping table
+
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(AgentCallbackLoginEvent), arg => fireEvent(AgentCallbackLogin, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(AgentCallbackLogoffEvent), arg => fireEvent(AgentCallbackLogoff, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(AgentCalledEvent), arg => fireEvent(AgentCalled, arg));
@@ -542,7 +535,6 @@ namespace AsterNET.Manager
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(AlarmClearEvent), arg => fireEvent(AlarmClear, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(AlarmEvent), arg => fireEvent(Alarm, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(CdrEvent), arg => fireEvent(Cdr, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(DBGetResponseEvent), arg => fireEvent(DBGetResponse, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(DialEvent), arg => fireEvent(Dial, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(DNDStateEvent), arg => fireEvent(DNDState, arg));
@@ -582,7 +574,6 @@ namespace AsterNET.Manager
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(RegistryEvent), arg => fireEvent(Registry, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(QueueCallerAbandonEvent), arg => fireEvent(QueueCallerAbandon, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(RenameEvent), arg => fireEvent(Rename, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(StatusCompleteEvent), arg => fireEvent(StatusComplete, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(StatusEvent), arg => fireEvent(Status, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(UnholdEvent), arg => fireEvent(Unhold, arg));
@@ -591,21 +582,17 @@ namespace AsterNET.Manager
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(UserEvent), arg => fireEvent(UserEvents, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ZapShowChannelsCompleteEvent), arg => fireEvent(ZapShowChannelsComplete, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ZapShowChannelsEvent), arg => fireEvent(ZapShowChannels, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ConnectEvent), arg => fireEvent(ConnectionState, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(DisconnectEvent), arg => fireEvent(ConnectionState, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ReloadEvent), arg => fireEvent(Reload, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ShutdownEvent), arg => fireEvent(ConnectionState, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(BridgeEvent), arg => fireEvent(Bridge, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(TransferEvent), arg => fireEvent(Transfer, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(DTMFEvent), arg => fireEvent(DTMF, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(DTMFBeginEvent), arg => fireEvent(DTMFBegin, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(DTMFEndEvent), arg => fireEvent(DTMFEnd, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(VarSetEvent), arg => fireEvent(VarSet, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(AGIExecEvent), arg => fireEvent(AGIExec, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ConfbridgeStartEvent), arg => fireEvent(ConfbridgeStart, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ConfbridgeJoinEvent), arg => fireEvent(ConfbridgeJoin, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ConfbridgeLeaveEvent), arg => fireEvent(ConfbridgeLeave, arg));
@@ -613,9 +600,7 @@ namespace AsterNET.Manager
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ConfbridgeTalkingEvent), arg => fireEvent(ConfbridgeTalking, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ConfbridgeMuteEvent), arg => fireEvent(ConfbridgeMute, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ConfbridgeUnmuteEvent), arg => fireEvent(ConfbridgeUnmute, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(FailedACLEvent), arg => fireEvent(FailedACL, arg));
-
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(AttendedTransferEvent), arg => fireEvent(AttendedTransfer, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(BridgeCreateEvent), arg => fireEvent(BridgeCreate, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(BridgeDestroyEvent), arg => fireEvent(BridgeDestroy, arg));
@@ -636,14 +621,16 @@ namespace AsterNET.Manager
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(ChallengeSentEvent), arg => fireEvent(ChallengeSent, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(SuccessfulAuthEvent), arg => fireEvent(SuccessfulAuth, arg));
             Helper.RegisterEventHandler(registeredEventHandlers, typeof(QueueSummaryEvent), arg => fireEvent(QueueSummary, arg));
-            
-            #endregion
+
+            #endregion Event mapping table
 
             this.internalEvent += new EventHandler<ManagerEvent>(internalEventHandler);
         }
-        #endregion
+
+        #endregion Constructor - ManagerConnection()
 
         #region Constructor - ManagerConnection(hostname, port, username, password)
+
         /// <summary>
         /// Creates a new instance with the given connection parameters.
         /// </summary>
@@ -659,9 +646,11 @@ namespace AsterNET.Manager
             this.username = username;
             this.password = password;
         }
-        #endregion
+
+        #endregion Constructor - ManagerConnection(hostname, port, username, password)
 
         #region Constructor - ManagerConnection(hostname, port, username, password, Encoding socketEncoding)
+
         /// <summary>
         /// Creates a new instance with the given connection parameters.
         /// </summary>
@@ -679,7 +668,8 @@ namespace AsterNET.Manager
             this.password = password;
             this.socketEncoding = socketEncoding;
         }
-        #endregion
+
+        #endregion Constructor - ManagerConnection(hostname, port, username, password, Encoding socketEncoding)
 
         /// <summary>
         /// Default Fast Reconnect retry counter.
@@ -709,13 +699,16 @@ namespace AsterNET.Manager
         }
 
         #region CallerThread
+
         internal Thread CallerThread
         {
             get { return callerThread; }
         }
-        #endregion
+
+        #endregion CallerThread
 
         #region internalEventHandler(object sender, ManagerEvent e)
+
         private void internalEventHandler(object sender, ManagerEvent e)
         {
             int eventHash = e.GetType().Name.GetHashCode();
@@ -733,9 +726,11 @@ namespace AsterNET.Manager
                 fireEvent(UnhandledEvent, e);
             }
         }
-        #endregion
+
+        #endregion internalEventHandler(object sender, ManagerEvent e)
 
         #region FireAllEvents
+
         /// <summary>
         /// If this property set to <b>true</b> then ManagerConnection send all unassigned events to UnhandledEvent handler,<br/>
         /// if set to <b>false</b> then all unassgned events lost and send only UnhandledEvent.<br/>
@@ -746,9 +741,11 @@ namespace AsterNET.Manager
             get { return this.fireAllEvents; }
             set { this.fireAllEvents = value; }
         }
-        #endregion
+
+        #endregion FireAllEvents
 
         #region PingInterval
+
         /// <summary>
         /// Timeout from Ping to Pong. If no Pong received send Disconnect event. Set to zero to disable.
         /// </summary>
@@ -757,9 +754,11 @@ namespace AsterNET.Manager
             get { return pingInterval; }
             set { pingInterval = value; }
         }
-        #endregion
+
+        #endregion PingInterval
 
         #region Hostname
+
         /// <summary> Sets the hostname of the asterisk server to connect to.<br/>
         /// Default is localhost.
         /// </summary>
@@ -768,9 +767,11 @@ namespace AsterNET.Manager
             get { return hostname; }
             set { hostname = value; }
         }
-        #endregion
+
+        #endregion Hostname
 
         #region Port
+
         /// <summary>
         /// Sets the port to use to connect to the asterisk server. This is the port
         /// specified in asterisk's manager.conf file.<br/>
@@ -781,9 +782,11 @@ namespace AsterNET.Manager
             get { return port; }
             set { port = value; }
         }
-        #endregion
+
+        #endregion Port
 
         #region UserName
+
         /// <summary>
         /// Sets the username to use to connect to the asterisk server. This is the
         /// username specified in asterisk's manager.conf file.
@@ -793,9 +796,11 @@ namespace AsterNET.Manager
             get { return username; }
             set { username = value; }
         }
-        #endregion
+
+        #endregion UserName
 
         #region Password
+
         /// <summary>
         /// Sets the password to use to connect to the asterisk server. This is the
         /// password specified in asterisk's manager.conf file.
@@ -805,9 +810,11 @@ namespace AsterNET.Manager
             get { return password; }
             set { password = value; }
         }
-        #endregion
+
+        #endregion Password
 
         #region DefaultResponseTimeout
+
         /// <summary> Sets the time in milliseconds the synchronous method
         /// will wait for a response before throwing a TimeoutException.<br/>
         /// Default is 2000.
@@ -817,9 +824,11 @@ namespace AsterNET.Manager
             get { return defaultResponseTimeout; }
             set { defaultResponseTimeout = value; }
         }
-        #endregion
+
+        #endregion DefaultResponseTimeout
 
         #region DefaultEventTimeout
+
         /// <summary> Sets the time in milliseconds the synchronous method
         /// will wait for a response and the last response event before throwing a TimeoutException.<br/>
         /// Default is 5000.
@@ -829,9 +838,11 @@ namespace AsterNET.Manager
             get { return defaultEventTimeout; }
             set { defaultEventTimeout = value; }
         }
-        #endregion
+
+        #endregion DefaultEventTimeout
 
         #region SleepTime
+
         /// <summary> Sets the time in milliseconds the synchronous methods
         /// SendAction(Action.ManagerAction) and
         /// SendAction(Action.ManagerAction, long) will sleep between two checks
@@ -846,9 +857,11 @@ namespace AsterNET.Manager
             get { return sleepTime; }
             set { sleepTime = value; }
         }
-        #endregion
+
+        #endregion SleepTime
 
         #region KeepAliveAfterAuthenticationFailure
+
         /// <summary> Set to true to try reconnecting to ther asterisk serve
         /// even if the reconnection attempt threw an AuthenticationFailedException.<br/>
         /// Default is false.
@@ -858,9 +871,11 @@ namespace AsterNET.Manager
             set { keepAliveAfterAuthenticationFailure = value; }
             get { return keepAliveAfterAuthenticationFailure; }
         }
-        #endregion
+
+        #endregion KeepAliveAfterAuthenticationFailure
 
         #region KeepAlive
+
         /// <summary>
         /// Should we attempt to reconnect when the connection is lost?<br/>
         /// This is set to true after successful login and to false after logoff or after an authentication failure when keepAliveAfterAuthenticationFailure is false.
@@ -870,7 +885,8 @@ namespace AsterNET.Manager
             get { return keepAlive; }
             set { keepAlive = value; }
         }
-        #endregion
+
+        #endregion KeepAlive
 
         #region Socket Settings
 
@@ -900,25 +916,30 @@ namespace AsterNET.Manager
         /// Changing the property doesn't do anything while you are already connected.
         /// </para>
         /// </remarks>
-        public int SocketReceiveBufferSize { get; set;}
+        public int SocketReceiveBufferSize { get; set; }
 
-        #endregion
+        #endregion Socket Settings
 
         #region Version
+
         public string Version
         {
             get { return version; }
         }
-        #endregion
+
+        #endregion Version
 
         #region AsteriskVersion
+
         public AsteriskVersion AsteriskVersion
         {
             get { return asteriskVersion; }
         }
-        #endregion
+
+        #endregion AsteriskVersion
 
         #region login(timeout)
+
         /// <summary>
         /// Does the real login, following the steps outlined below.<br/>
         /// Connects to the asterisk server by calling connect() if not already connected<br/>
@@ -1021,11 +1042,12 @@ namespace AsterNET.Manager
                 throw new ManagerException("Unable login to Asterisk - " + response.Message);
             else
                 throw new ManagerException("Unknown response during login to Asterisk - " + response.GetType().Name + " with message " + response.Message);
-
         }
-        #endregion
+
+        #endregion login(timeout)
 
         #region determineVersion()
+
         protected internal AsteriskVersion determineVersion()
         {
             Response.ManagerResponse response;
@@ -1096,9 +1118,10 @@ namespace AsterNET.Manager
             return AsteriskVersion.ASTERISK_1_0;
         }
 
-        #endregion
+        #endregion determineVersion()
 
         #region connect()
+
         protected internal bool connect()
         {
             bool result = false;
@@ -1113,7 +1136,7 @@ namespace AsterNET.Manager
 #endif
                     try
                     {
-                        if (SocketReceiveBufferSize>0)
+                        if (SocketReceiveBufferSize > 0)
                             mrSocket = new SocketConnection(hostname, port, SocketReceiveBufferSize, socketEncoding);
                         else
                             mrSocket = new SocketConnection(hostname, port, socketEncoding);
@@ -1159,9 +1182,11 @@ namespace AsterNET.Manager
 
             return IsConnected();
         }
-        #endregion
+
+        #endregion connect()
 
         #region disconnect()
+
         /// <summary> Closes the socket connection.</summary>
         private void disconnect(bool withDie)
         {
@@ -1196,9 +1221,11 @@ namespace AsterNET.Manager
                 pingHandlers.Clear();
             }
         }
-        #endregion
+
+        #endregion disconnect()
 
         #region reconnect(bool init)
+
         /// <summary>
         /// Reconnects to the asterisk server when the connection is lost.<br/>
         /// While keepAlive is true we will try to reconnect.
@@ -1263,8 +1290,8 @@ namespace AsterNET.Manager
                         {
                             logger.Info("Reconnect delay exception : ", ex.Message);
 #else
-						catch
-						{
+                        catch
+                        {
 #endif
                             continue;
                         }
@@ -1282,8 +1309,8 @@ namespace AsterNET.Manager
                         {
                             logger.Info("Connect exception : ", ex.Message);
 #else
-						catch
-						{
+                        catch
+                        {
 #endif
                         }
                         retryCount++;
@@ -1302,9 +1329,11 @@ namespace AsterNET.Manager
                 fireEvent(new DisconnectEvent(this));
             }
         }
-        #endregion
+
+        #endregion reconnect(bool init)
 
         #region createInternalActionId()
+
         /// <summary>
         /// Creates a new unique internal action id based on the hash code of this connection and a sequence.
         /// </summary>
@@ -1312,9 +1341,11 @@ namespace AsterNET.Manager
         {
             return this.GetHashCode() + "_" + (this.actionIdCount++);
         }
-        #endregion
+
+        #endregion createInternalActionId()
 
         #region Login()
+
         /// <summary>
         /// Logs in to the Asterisk manager using asterisk's MD5 based
         /// challenge/response protocol. The login is delayed until the protocol
@@ -1338,12 +1369,14 @@ namespace AsterNET.Manager
         {
             login(timeout);
         }
-        #endregion
+
+        #endregion Login()
 
         #region IsConnected()
+
         /// <summary> Returns true if there is a socket connection to the
         /// asterisk server, false otherwise.
-        /// 
+        ///
         /// </summary>
         /// <returns> true if there is a socket connection to the
         /// asterisk server, false otherwise.
@@ -1355,9 +1388,11 @@ namespace AsterNET.Manager
                 result = mrSocket != null && mrSocket.IsConnected;
             return result;
         }
-        #endregion
+
+        #endregion IsConnected()
 
         #region Logoff()
+
         /// <summary>
         /// Sends a LogoffAction and disconnects from the server.
         /// </summary>
@@ -1378,9 +1413,11 @@ namespace AsterNET.Manager
             }
             disconnect(true);
         }
-        #endregion
+
+        #endregion Logoff()
 
         #region SendAction(action)
+
         /// <summary>
         /// Send Action with default timeout.
         /// </summary>
@@ -1390,9 +1427,11 @@ namespace AsterNET.Manager
         {
             return SendAction(action, defaultResponseTimeout);
         }
-        #endregion
+
+        #endregion SendAction(action)
 
         #region SendAction(action, timeout)
+
         /// <summary>
         /// Send action ans with timeout (milliseconds)
         /// </summary>
@@ -1413,9 +1452,11 @@ namespace AsterNET.Manager
                 return handler.Response;
             throw new TimeoutException("Timeout waiting for response to " + action.Action);
         }
-        #endregion
+
+        #endregion SendAction(action, timeout)
 
         #region SendAction(action, responseHandler)
+
         /// <summary>
         /// Send action ans with timeout (milliseconds)
         /// </summary>
@@ -1443,22 +1484,24 @@ namespace AsterNET.Manager
 
             return responseHandler != null ? responseHandler.Hash : 0;
         }
-        #endregion
 
-
+        #endregion SendAction(action, responseHandler)
 
         #region SendActionAsync(action)
+
         /// <summary>
         /// Asynchronously send Action async with default timeout.
         /// </summary>
         /// <param name="action">action to send</param>
         public Task<ManagerResponse> SendActionAsync(ManagerAction action)
         {
-          return SendActionAsync(action, null);
+            return SendActionAsync(action, null);
         }
-        #endregion
+
+        #endregion SendActionAsync(action)
 
         #region SendActionAsync(action, timeout)
+
         /// <summary>
         /// Asynchronously send Action async.
         /// </summary>
@@ -1466,31 +1509,36 @@ namespace AsterNET.Manager
         /// <param name="cancellationToken">cancellation Token</param>
         public Task<ManagerResponse> SendActionAsync(ManagerAction action, CancellationTokenSource cancellationToken)
         {
-          var handler = new TaskResponseHandler(action);
-          var source = handler.TaskCompletionSource;
+            var handler = new TaskResponseHandler(action);
+            var source = handler.TaskCompletionSource;
 
-          SendAction(action, handler);
+            SendAction(action, handler);
 
-          if (cancellationToken != null)
-            cancellationToken.Token.Register(() => { source.TrySetCanceled(); });
+            if (cancellationToken != null)
+                cancellationToken.Token.Register(() => { source.TrySetCanceled(); });
 
-          return source.Task.ContinueWith(x =>
-          {
-            RemoveResponseHandler(handler);
-            return x.Result;
-          });
+            return source.Task.ContinueWith(x =>
+            {
+                RemoveResponseHandler(handler);
+                return x.Result;
+            });
         }
-        #endregion
+
+        #endregion SendActionAsync(action, timeout)
+
         #region SendEventGeneratingAction(action)
+
         public ResponseEvents SendEventGeneratingAction(ManagerActionEvent action)
         {
             return SendEventGeneratingAction(action, defaultEventTimeout);
         }
-        #endregion
+
+        #endregion SendEventGeneratingAction(action)
 
         #region SendEventGeneratingAction(action, timeout)
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="action"></param>
         /// <param name="timeout">wait timeout in milliseconds</param>
@@ -1527,9 +1575,11 @@ namespace AsterNET.Manager
 
             throw new EventTimeoutException("Timeout waiting for response or response events to " + action.Action, handler.ResponseEvents);
         }
-        #endregion
+
+        #endregion SendEventGeneratingAction(action, timeout)
 
         #region Response Handler helpers
+
         private void AddResponseHandler(IResponseHandler handler)
         {
             lock (lockHandlers)
@@ -1613,7 +1663,8 @@ namespace AsterNET.Manager
                         handler = responseEventHandlers[hash];
             return handler;
         }
-        #endregion
+
+        #endregion Response Handler helpers
 
         #region SendToAsterisk(ManagerAction action, string internalActionId)
 
@@ -1642,16 +1693,19 @@ namespace AsterNET.Manager
             }
         }
 
-        #endregion
+        #endregion SendToAsterisk(ManagerAction action, string internalActionId)
 
         #region BuildAction(action)
+
         public string BuildAction(Action.ManagerAction action)
         {
             return BuildAction(action, null);
         }
-        #endregion
+
+        #endregion BuildAction(action)
 
         #region BuildAction(action, internalActionId)
+
         public string BuildAction(ManagerAction action, string internalActionId)
         {
             MethodInfo getter;
@@ -1703,7 +1757,7 @@ namespace AsterNET.Manager
                     logger.Error("Unable to retrieve property '" + name + "' of " + action.GetType(), ex);
                     continue;
 #else
-					throw new ManagerException("Unable to retrieve property '" + name + "' of " + action.GetType(), ex);
+                    throw new ManagerException("Unable to retrieve property '" + name + "' of " + action.GetType(), ex);
 #endif
                 }
                 catch (TargetInvocationException ex)
@@ -1712,7 +1766,7 @@ namespace AsterNET.Manager
                     logger.Error("Unable to retrieve property '" + name + "' of " + action.GetType(), ex);
                     continue;
 #else
-					throw new ManagerException("Unable to retrieve property '" + name + "' of " + action.GetType(), ex);
+                    throw new ManagerException("Unable to retrieve property '" + name + "' of " + action.GetType(), ex);
 #endif
                 }
 
@@ -1756,16 +1810,20 @@ namespace AsterNET.Manager
             sb.Append(Common.LINE_SEPARATOR);
             return sb.ToString();
         }
-        #endregion
+
+        #endregion BuildAction(action, internalActionId)
 
         #region GetProtocolIdentifier()
+
         public string GetProtocolIdentifier()
         {
             return this.protocolIdentifier;
         }
-        #endregion
+
+        #endregion GetProtocolIdentifier()
 
         #region RegisterUserEventClass(class)
+
         /// <summary>
         /// Register User Event Class
         /// </summary>
@@ -1774,9 +1832,11 @@ namespace AsterNET.Manager
         {
             Helper.RegisterEventClass(registeredEventClasses, userEventClass);
         }
-        #endregion
+
+        #endregion RegisterUserEventClass(class)
 
         #region DispatchResponse(response)
+
         /// <summary>
         /// This method is called by the reader whenever a ManagerResponse is
         /// received. The response is dispatched to the associated <see cref="IManagerResponseHandler"/>ManagerResponseHandler.
@@ -1845,7 +1905,7 @@ namespace AsterNET.Manager
 #if LOGGER
                         logger.Error("Unexpected exception in responseHandler {0}\n{1}", response, ex);
 #else
-						throw new ManagerException("Unexpected exception in responseHandler " + responseHandler.GetType().FullName, ex);
+                        throw new ManagerException("Unexpected exception in responseHandler " + responseHandler.GetType().FullName, ex);
 #endif
                     }
                 }
@@ -1870,7 +1930,9 @@ namespace AsterNET.Manager
 #if LOGGER
             logger.Info("Reconnected - DispatchEvent : " + response);
 #endif
+
             #region Support background reconnect
+
             if (response is ChallengeResponse)
             {
                 string key = null;
@@ -1892,8 +1954,8 @@ namespace AsterNET.Manager
                     {
                         logger.Error("Unable to create login key using MD5 Message Digest", ex);
 #else
-					catch
-					{
+                    catch
+                    {
 #endif
                         key = null;
                     }
@@ -1937,11 +1999,14 @@ namespace AsterNET.Manager
                 else
                     disconnect(true);
             }
-            #endregion
+
+            #endregion Support background reconnect
         }
-        #endregion
+
+        #endregion DispatchResponse(response)
 
         #region DispatchEvent(...)
+
         /// <summary>
         /// This method is called by the reader whenever a ManagerEvent is received.
         /// The event is dispatched to all registered ManagerEventHandlers.
@@ -1976,13 +2041,14 @@ namespace AsterNET.Manager
 #if LOGGER
                             logger.Error("Unexpected exception", ex);
 #else
-							throw ex;
+                            throw ex;
 #endif
                         }
                 }
             }
 
             #region ConnectEvent
+
             if (e is ConnectEvent)
             {
                 string protocol = ((ConnectEvent)e).ProtocolIdentifier;
@@ -2015,15 +2081,16 @@ namespace AsterNET.Manager
                     {
                         logger.Info("Send Challenge fail : ", ex.Message);
 #else
-					catch
-					{
+                    catch
+                    {
 #endif
                         disconnect(true);
                     }
                     return;
                 }
             }
-            #endregion
+
+            #endregion ConnectEvent
 
             if (reconnected && e is DisconnectEvent)
             {
@@ -2070,6 +2137,7 @@ namespace AsterNET.Manager
 
             return false;
         }
-        #endregion
+
+        #endregion DispatchEvent(...)
     }
 }
